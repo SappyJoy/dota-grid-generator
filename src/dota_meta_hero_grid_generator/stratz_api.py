@@ -1,6 +1,7 @@
 import requests
 
 from .config import API_TOKEN, STRATZ_API_URL
+from .utils import translate_rank_to_basic
 
 
 def run_graphql_query(query: str, variables: dict):
@@ -86,6 +87,66 @@ def get_hero_stats(position: str, days: int, rank: str, modes: list):
 
 
 # TODO: Currently not working (also test is false)
+# def get_hero_matchup(
+#     hero_id: int, days: int, rank: str, modes: list, order_by: int, limit: int
+# ):
+#     """
+#     Fetch hero matchup data for a specific hero.
+#
+#     Parameters:
+#         hero_id (int): The hero's ID.
+#         days (int): Number of days to parse (placeholder to calculate week if needed).
+#         rank (str): Rank tier filter.
+#         modes (list): List of game mode identifiers.
+#         order_by (int): Ordering parameter to distinguish best vs. worst matchups.
+#         limit (int): Maximum number of matchup entries to return.
+#
+#     Returns:
+#         dict: A dictionary with matchup details (includes advantage and disadvantage lists).
+#     """
+#     basic_rank = translate_rank_to_basic(rank)
+#     # Placeholder GraphQL query for hero matchup data using heroVsHeroMatchup
+#     query = """
+#     query($heroId: Short!, $week: Long, $bracket: [RankBracketBasicEnum!], $matchLimit: Int) {
+#         heroStats {
+#             heroVsHeroMatchup(
+#                 heroId: $heroId,
+#                 week: $week,
+#                 bracketBasicIds: $bracket,
+#                 matchLimit: $matchLimit
+#             ) {
+#                 advantage {
+#                     heroId
+#                     with {
+#                         heroId1
+#                         winRateHeroId1
+#                     }
+#                 }
+#                 disadvantage {
+#                     heroId
+#                     with {
+#                         heroId1
+#                         winRateHeroId1
+#                     }
+#                 }
+#             }
+#         }
+#     }
+#     """
+#     variables = {
+#         "heroId": hero_id,
+#         "week": None,
+#         "bracket": [basic_rank],
+#         "matchLimit": limit,
+#     }
+#     print(
+#         f"Fetching hero matchup for hero_id {hero_id}, days {days}, rank {rank}, modes {modes}, order_by {order_by}, limit {limit}"
+#     )
+#     result = run_graphql_query(query, variables)
+#     print(result)
+#     return result.get("data", {}).get("heroVsHeroMatchup", {})
+
+
 def get_hero_matchup(
     hero_id: int, days: int, rank: str, modes: list, order_by: int, limit: int
 ):
@@ -103,29 +164,39 @@ def get_hero_matchup(
     Returns:
         dict: A dictionary with matchup details (includes advantage and disadvantage lists).
     """
+    basic_rank = translate_rank_to_basic(rank)
     # Placeholder GraphQL query for hero matchup data using heroVsHeroMatchup
     query = """
     query($heroId: Short!, $week: Long, $bracket: [RankBracketBasicEnum!], $matchLimit: Int) {
         heroStats {
-            heroVsHeroMatchup(
+            matchUp(
                 heroId: $heroId,
                 week: $week,
                 bracketBasicIds: $bracket,
                 matchLimit: $matchLimit
             ) {
-                advantage {
-                    heroId
-                    with {
-                        heroId1
-                        winRateHeroId1
-                    }
+                heroId
+                with {
+                    heroId1
+                    heroId2
+                    week
+                    matchCount
+                    winCount
+                    synergy
+                    winRateHeroId1
+                    winRateHeroId2
+                    winsAverage
                 }
-                disadvantage {
-                    heroId
-                    with {
-                        heroId1
-                        winRateHeroId1
-                    }
+                vs {
+                    heroId1
+                    heroId2
+                    week
+                    matchCount
+                    winCount
+                    synergy
+                    winRateHeroId1
+                    winRateHeroId2
+                    winsAverage
                 }
             }
         }
@@ -134,7 +205,7 @@ def get_hero_matchup(
     variables = {
         "heroId": hero_id,
         "week": None,
-        "bracket": [rank],
+        "bracket": [basic_rank],
         "matchLimit": limit,
     }
     print(
@@ -142,7 +213,156 @@ def get_hero_matchup(
     )
     result = run_graphql_query(query, variables)
     print(result)
-    return result.get("data", {}).get("heroVsHeroMatchup", {})
+    return result.get("data", {}).get("heroStats", {}).get("matchUp", [])
+
+
+def get_hero_matchup_by_order(hero_id: int, rank: str, order_by: int, limit: int):
+    """
+    Helper function to fetch hero matchup data with a given order.
+
+    Parameters:
+        hero_id (int): The hero's ID.
+        rank (str): Rank tier filter.
+        order_by (int): Ordering parameter (Byte). Accepted values:
+            - 0: Synergy
+            - 3: Loss
+            - 4: Disadvantage
+            - 5: Advantage
+        limit (int): Maximum number of matchup entries.
+
+    Returns:
+        list: The result of the matchUp query.
+    """
+    # Translate rank to RankBracketBasicEnum using your helper.
+    basic_rank = translate_rank_to_basic(rank)
+    query = """
+    query($heroId: Short!, $week: Long, $bracket: [RankBracketBasicEnum!], $orderBy: Byte, $matchLimit: Int) {
+        heroStats {
+            matchUp(
+                heroId: $heroId,
+                week: $week,
+                bracketBasicIds: $bracket,
+                orderBy: $orderBy,
+                matchLimit: $matchLimit
+            ) {
+                heroId
+                with {
+                    heroId1
+                    heroId2
+                    week
+                    matchCount
+                    winCount
+                    synergy
+                    winRateHeroId1
+                    winRateHeroId2
+                    winsAverage
+                }
+                vs {
+                    heroId1
+                    heroId2
+                    week
+                    matchCount
+                    winCount
+                    synergy
+                    winRateHeroId1
+                    winRateHeroId2
+                    winsAverage
+                }
+            }
+        }
+    }
+    """
+    variables = {
+        "heroId": hero_id,
+        "week": None,  # Placeholder – adjust if needed.
+        "bracket": [basic_rank],
+        "orderBy": order_by,
+        "matchLimit": limit,
+    }
+    print(
+        f"Fetching hero matchup for hero_id {hero_id} with orderBy {order_by}, rank {rank} (translated: {basic_rank}), limit {limit}"
+    )
+    result = run_graphql_query(query, variables)
+    # Our query returns an array under matchUp. We assume one record in the array.
+    return result.get("data", {}).get("heroStats", {}).get("matchUp", [])
+
+
+def get_hero_best_vs(hero_id: int, rank: str, limit: int, hero_lookup: dict = None):
+    """
+    Fetch the enemy (versus) heroes for which the given hero performs best.
+    Uses orderBy = 5 (Advantage).
+    Optionally, annotate each matchup entry with hero display name using hero_lookup.
+    """
+    matchup = get_hero_matchup_by_order(hero_id, rank, order_by=5, limit=limit)
+    if matchup:
+        vs_list = matchup[0].get("vs", [])
+        if hero_lookup:
+            for m in vs_list:
+                # Annotate using hero_lookup on heroId1
+                hero_id_key = m.get("heroId2")
+                if hero_id_key in hero_lookup:
+                    m["heroName"] = hero_lookup[hero_id_key].get("displayName", f"Hero {hero_id_key}")
+                else:
+                    m["heroName"] = f"Hero {hero_id_key}"
+        return vs_list
+    return []
+
+def get_hero_worst_vs(hero_id: int, rank: str, limit: int, hero_lookup: dict = None):
+    """
+    Fetch the enemy (versus) heroes for which the given hero performs worst.
+    Uses orderBy = 4 (Disadvantage).
+    Optionally, annotate each matchup entry with hero display name using hero_lookup.
+    """
+    matchup = get_hero_matchup_by_order(hero_id, rank, order_by=4, limit=limit)
+    if matchup:
+        vs_list = matchup[0].get("vs", [])
+        if hero_lookup:
+            for m in vs_list:
+                hero_id_key = m.get("heroId2")
+                if hero_id_key in hero_lookup:
+                    m["heroName"] = hero_lookup[hero_id_key].get("displayName", f"Hero {hero_id_key}")
+                else:
+                    m["heroName"] = f"Hero {hero_id_key}"
+        return vs_list
+    return []
+
+def get_hero_best_with(hero_id: int, rank: str, limit: int, hero_lookup: dict = None):
+    """
+    Fetch the allied (with) heroes that synergize best with the given hero.
+    Uses orderBy = 0 (Synergy).
+    Optionally, annotate each matchup entry with hero display name using hero_lookup.
+    """
+    matchup = get_hero_matchup_by_order(hero_id, rank, order_by=0, limit=limit)
+    if matchup:
+        with_list = matchup[0].get("with", [])
+        if hero_lookup:
+            for m in with_list:
+                hero_id_key = m.get("heroId2")
+                if hero_id_key in hero_lookup:
+                    m["heroName"] = hero_lookup[hero_id_key].get("displayName", f"Hero {hero_id_key}")
+                else:
+                    m["heroName"] = f"Hero {hero_id_key}"
+        return with_list
+    return []
+
+def get_hero_worst_with(hero_id: int, rank: str, limit: int, hero_lookup: dict = None):
+    """
+    Fetch the allied (with) heroes that have the worst synergy with the given hero.
+    Uses orderBy = 3 (Loss) as a proxy for poor synergy.
+    Optionally, annotate each matchup entry with hero display name using hero_lookup.
+    """
+    matchup = get_hero_matchup_by_order(hero_id, rank, order_by=3, limit=limit)
+    if matchup:
+        with_list = matchup[0].get("with", [])
+        if hero_lookup:
+            for m in with_list:
+                hero_id_key = m.get("heroId2")
+                if hero_id_key in hero_lookup:
+                    m["heroName"] = hero_lookup[hero_id_key].get("displayName", f"Hero {hero_id_key}")
+                else:
+                    m["heroName"] = f"Hero {hero_id_key}"
+        return with_list
+    return []
 
 
 def get_win_day(

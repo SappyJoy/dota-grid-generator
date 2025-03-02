@@ -11,6 +11,10 @@ from .stratz_api import (
     get_player_stats,
     get_win_day,
     get_win_game_version,
+    get_hero_best_vs,
+    get_hero_best_with,
+    get_hero_worst_vs,
+    get_hero_worst_with
 )
 
 
@@ -69,7 +73,8 @@ def main():
     hero_lookup = {hero["id"]: hero for hero in heroes_list}
 
     hero_grid = {"positions": {}}
-    positions = ["POSITION_1", "POSITION_2", "POSITION_3", "POSITION_4", "POSITION_5"]
+    # positions = ["POSITION_1", "POSITION_2", "POSITION_3", "POSITION_4", "POSITION_5"]
+    positions = ["POSITION_1"]
 
     # Cache hero details to avoid redundant API calls.
     hero_details_cache = {}
@@ -112,16 +117,24 @@ def main():
 
         # Sort heroes by winRate in descending order and choose the top 16.
         top_heroes = sorted(aggregated_stats, key=lambda x: x["winRate"], reverse=True)[
-            :16
+            :3
         ]
         hero_grid["positions"][str(idx)] = {"heroes": top_heroes}
 
-    # For each top hero, retrieve matchup data.
-    # for pos_data in hero_grid["positions"].values():
-    #     for hero in pos_data["heroes"]:
-    #         hero_id = hero.get("heroId")
-    #         matchup = get_hero_matchup(hero_id, days, rank, modes, order_by=0, limit=10)
-    #         hero["matchup"] = matchup
+    # For each top hero, retrieve matchup data and annotate with hero display names.
+    for pos_data in hero_grid["positions"].values():
+        for hero in pos_data["heroes"]:
+            hero_id = hero.get("heroId")
+            best_vs = get_hero_best_vs(hero_id, rank, limit=10, hero_lookup=hero_lookup)
+            worst_vs = get_hero_worst_vs(hero_id, rank, limit=10, hero_lookup=hero_lookup)
+            best_with = get_hero_best_with(hero_id, rank, limit=10, hero_lookup=hero_lookup)
+            worst_with = get_hero_worst_with(hero_id, rank, limit=10, hero_lookup=hero_lookup)
+            hero["matchup"] = {
+                "best_vs": best_vs,
+                "worst_vs": worst_vs,
+                "best_with": best_with,
+                "worst_with": worst_with,
+            }
 
     # Write the final configuration to a JSON file.
     with open("hero_grid_config.json", "w") as outfile:
