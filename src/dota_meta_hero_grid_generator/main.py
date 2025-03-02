@@ -9,6 +9,7 @@ from .stratz_api import (
     get_hero_stats,
     get_heroes,
     get_player_stats,
+    get_win_day,
     get_win_game_version,
 )
 
@@ -40,7 +41,9 @@ def parse_arguments():
 
 def main():
     args = parse_arguments()
-    days = args.days if args.days <= 12 else 12  # API provides at most 12 days of data. # TODO: use weeks and months to extend this
+    days = (
+        args.days if args.days <= 12 else 12
+    )  # API provides at most 12 days of data. # TODO: use weeks and months to extend this
     rank = args.rank
     modes = [mode.strip() for mode in args.modes.split(",")]
     game_version_filter_str = args.game_version
@@ -61,6 +64,10 @@ def main():
         f"Parsed arguments:\n  Days: {days}\n  Rank: {rank}\n  Modes: {modes}\n  Game Version Filter: {game_version_filter_str} (ID: {game_version_filter_id})"
     )
 
+    # Fetch all heroes for the selected game version to build a hero lookup.
+    heroes_list = get_heroes(game_version_filter_id, language="ENGLISH")
+    hero_lookup = {hero["id"]: hero for hero in heroes_list}
+
     hero_grid = {"positions": {}}
     positions = ["POSITION_1", "POSITION_2", "POSITION_3", "POSITION_4", "POSITION_5"]
 
@@ -70,7 +77,7 @@ def main():
     # For each position, retrieve hero stats via get_win_game_version,
     # filter by game version if provided, compute ratings, and add matchup data.
     for idx, pos in enumerate(positions, start=1):
-        stats = get_win_game_version(pos, rank, modes)
+        stats = get_win_day(pos, rank, modes)
 
         # Filter stats by game version ID if a filter was provided.
         if game_version_filter_id:
@@ -79,41 +86,35 @@ def main():
             ]
 
         # For each hero stat, compute a simple winRate and lookup the game version string.
+        aggregated_stats = {}
         for s in stats:
+            hero_id = s.get("heroId")
+            if hero_id in aggregated_stats:
+                aggregated_stats[hero_id]["winCount"] += s.get("winCount", 0)
+                aggregated_stats[hero_id]["matchCount"] += s.get("matchCount", 0)
+            else:
+                aggregated_stats[hero_id] = {
+                    "heroId": hero_id,
+                    "winCount": s.get("winCount", 0),
+                    "matchCount": s.get("matchCount", 0),
+                }
+        aggregated_stats = list(aggregated_stats.values())
+
+        # Compute a simple winRate for each hero and add the hero's display name.
+        for s in aggregated_stats:
             if s.get("matchCount", 0) > 0:
                 s["winRate"] = s["winCount"] / s["matchCount"]
             else:
                 s["winRate"] = 0
+            hero_id = s.get("heroId")
+            details = hero_lookup.get(hero_id, {})
+            s["heroName"] = details.get("displayName", f"Hero {hero_id}")
 
         # Sort heroes by winRate in descending order and choose the top 16.
-        top_heroes = sorted(stats, key=lambda x: x["winRate"], reverse=True)[:16]
+        top_heroes = sorted(aggregated_stats, key=lambda x: x["winRate"], reverse=True)[
+            :16
+        ]
         hero_grid["positions"][str(idx)] = {"heroes": top_heroes}
-
-    # Gather unique gameVersionIds from all top heroes.
-    game_versions_needed = {}
-    for pos_data in hero_grid["positions"].values():
-        for hero in pos_data["heroes"]:
-            gv_id = hero.get("gameVersionId")
-            hero_id = hero.get("heroId")
-            if gv_id not in game_versions_needed:
-                game_versions_needed[gv_id] = set()
-            game_versions_needed[gv_id].add(hero_id)
-
-    # For each gameVersionId, request all heroes once and build a lookup.
-    for gv_id, hero_ids in game_versions_needed.items():
-        # Fetch all hero details for this game version.
-        heroes_list = get_heroes(gv_id, language="ENGLISH")
-        # Build lookup: heroId -> hero detail.
-        hero_lookup = {hero["id"]: hero for hero in heroes_list}
-        hero_details_cache[gv_id] = hero_lookup
-
-    # Update each top hero record with its human-readable name.
-    for pos_data in hero_grid["positions"].values():
-        for hero in pos_data["heroes"]:
-            gv_id = hero.get("gameVersionId")
-            hero_id = hero.get("heroId")
-            details = hero_details_cache.get(gv_id, {}).get(hero_id, {})
-            hero["heroName"] = details.get("displayName", f"Hero {hero_id}")
 
     # For each top hero, retrieve matchup data.
     # for pos_data in hero_grid["positions"].values():

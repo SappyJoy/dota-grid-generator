@@ -141,64 +141,48 @@ def get_hero_matchup(
         f"Fetching hero matchup for hero_id {hero_id}, days {days}, rank {rank}, modes {modes}, order_by {order_by}, limit {limit}"
     )
     result = run_graphql_query(query, variables)
+    print(result)
     return result.get("data", {}).get("heroVsHeroMatchup", {})
 
 
 def get_win_day(
-    hero_ids: list,
     position: str,
-    bracket: str,
+    rank: str,
     modes: list,
-    take: int,
-    skip: int,
-    group_by: str = "HERO_ID",
 ):
     """
     Fetch aggregated win/match statistics for the last N days.
 
     Parameters:
-      hero_ids: List of hero IDs to query.
-      position: Position filter (e.g., "POSITION_1").
-      bracket: Rank bracket filter (e.g., "CRUSADER").
-      modes: List of game mode identifiers.
-      take: Number of days to consider (max 12).
-      skip: Offset (usually 0).
-      group_by: Grouping method (default "HERO_ID").
+        position (str): Position ID (e.g. "POSITION_1").
+        rank (str): Rank tier filter matching a value from RankBracket.
+        modes (list): List of game mode identifiers.
 
     Returns:
-      List of objects with heroId, matchCount, and winCount.
+        list: List of hero stats data.
     """
     query = """
-    query($heroIds: [Short]!, $take: Int, $skip: Int, $bracketIds: [RankBracket!], $positionIds: [MatchPlayerPositionType!], $gameModeIds: [GameModeEnumType!], $groupBy: FilterHeroWinRequestGroupBy!) {
-      winDay(
-        heroIds: $heroIds,
-        take: $take,
-        skip: $skip,
-        bracketIds: $bracketIds,
-        positionIds: $positionIds,
-        gameModeIds: $gameModeIds,
-        groupBy: $groupBy
-      ) {
-        heroId
-        matchCount
-        winCount
-      }
+    query($position: MatchPlayerPositionType!, $bracket: [RankBracket!]) {
+        heroStats {
+            winDay(
+                positionIds: [$position],
+                bracketIds: $bracket,
+            ) {
+                day
+                heroId
+                winCount
+                matchCount
+            }
+        }
     }
     """
     variables = {
-        "heroIds": hero_ids,
-        "take": take,
-        "skip": skip,
-        "bracketIds": [bracket],
-        "positionIds": [position],
-        "gameModeIds": modes,
-        "groupBy": group_by,
+        "position": position,
+        "bracket": [rank],
     }
-    print(
-        f"Fetching winDay stats for heroes {hero_ids}, position {position}, bracket {bracket}, modes {modes}"
-    )
+    print(f"Fetching hero stats for position {position}, rank {rank}, modes {modes}")
     result = run_graphql_query(query, variables)
-    return result.get("data", {}).get("winDay", [])
+    return result.get("data", {}).get("heroStats", {}).get("winDay", [])
 
 
 def get_win_game_version(position: str, rank: str, modes: list):
@@ -285,7 +269,7 @@ def get_game_versions():
     return result.get("data", {}).get("constants", {}).get("gameVersions", [])
 
 
-def get_heroes(game_version_id: int, language: str = "ENGLISH"):
+def get_heroes(game_version_id, language: str = "ENGLISH"):
     """
     Fetch all heroes for a given game version and language.
 
