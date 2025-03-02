@@ -7,7 +7,9 @@ authors = [
     { name = "Stepan Ponomarev", email = "stponomarevw@gmail.com" }
 ]
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "requests>=2.32.3",
+]
 
 [project.scripts]
 dota-meta-hero-grid-generator = "dota_meta_hero_grid_generator:main"
@@ -15,3 +17,8 @@ dota-meta-hero-grid-generator = "dota_meta_hero_grid_generator:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+]
