@@ -17,16 +17,17 @@ class HeroGridBuilder:
         """Define the layout constants for the grid"""
         return {
             "HERO_X": 0.0,
-            "HERO_WIDTH": 59.48,
-            "BEST_VS_X": 32.09,
-            "BEST_VS_WIDTH": 293.48,
-            "WORST_VS_X": 354.52,
-            "WORST_VS_WIDTH": 291.91,
-            "BEST_WITH_X": 664.43,
-            "BEST_WITH_WIDTH": 291.91,
-            "WORST_WITH_X": 932.09,
-            "WORST_WITH_WIDTH": 291.91,
-            "ROW_HEIGHT": 50.0,
+            "HERO_WIDTH": 59,
+            "BEST_VS_X": 32,
+            "BEST_VS_WIDTH": 291,
+            "WORST_VS_X": 325,
+            "WORST_VS_WIDTH": 291,
+            "BEST_WITH_X": 616,
+            "BEST_WITH_WIDTH": 291,
+            "WORST_WITH_X": 907,
+            "WORST_WITH_WIDTH": 291,
+            "ROW_HEIGHT": 40.0,
+            "ROW_SPACING": -3.0,
         }
 
     def build(self):
@@ -49,9 +50,10 @@ class HeroGridBuilder:
         categories = []
         layout = self.layout_constants
         row_height = layout["ROW_HEIGHT"]
+        row_spacing = layout["ROW_SPACING"]
 
         for row_index, hero in enumerate(heroes):
-            y_position = row_index * row_height
+            y_position = row_index * (row_height + row_spacing)
             self._add_hero_block(categories, hero, y_position, layout)
             self._add_best_vs_block(categories, hero, y_position, layout)
             self._add_worst_vs_block(categories, hero, y_position, layout)
