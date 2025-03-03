@@ -1,2 +1,2 @@
-API_TOKEN = "paste_your_api_tokern_here"  # Replace with your actual Stratz API token
+API_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJTdWJqZWN0IjoiOGMwOGQ0NWUtYWRlNy00N2Y2LWExMmItZWNmMTk2ZjdlMTA5IiwiU3RlYW1JZCI6IjM5ODU1ODg1OSIsIm5iZiI6MTc0MDg1MDYzOSwiZXhwIjoxNzcyMzg2NjM5LCJpYXQiOjE3NDA4NTA2MzksImlzcyI6Imh0dHBzOi8vYXBpLnN0cmF0ei5jb20ifQ.INtFeIsIQGYkZIX_m6ExuT6QukXLsnStHnFOzfUzyJU"  # Replace with your actual Stratz API token
 STRATZ_API_URL = "https://api.stratz.com/graphql"

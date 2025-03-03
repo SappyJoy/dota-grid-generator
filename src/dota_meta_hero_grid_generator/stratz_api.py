@@ -301,11 +301,14 @@ def get_hero_best_vs(hero_id: int, rank: str, limit: int, hero_lookup: dict = No
                 # Annotate using hero_lookup on heroId1
                 hero_id_key = m.get("heroId2")
                 if hero_id_key in hero_lookup:
-                    m["heroName"] = hero_lookup[hero_id_key].get("displayName", f"Hero {hero_id_key}")
+                    m["heroName"] = hero_lookup[hero_id_key].get(
+                        "displayName", f"Hero {hero_id_key}"
+                    )
                 else:
                     m["heroName"] = f"Hero {hero_id_key}"
         return vs_list
     return []
+
 
 def get_hero_worst_vs(hero_id: int, rank: str, limit: int, hero_lookup: dict = None):
     """
@@ -320,11 +323,14 @@ def get_hero_worst_vs(hero_id: int, rank: str, limit: int, hero_lookup: dict = N
             for m in vs_list:
                 hero_id_key = m.get("heroId2")
                 if hero_id_key in hero_lookup:
-                    m["heroName"] = hero_lookup[hero_id_key].get("displayName", f"Hero {hero_id_key}")
+                    m["heroName"] = hero_lookup[hero_id_key].get(
+                        "displayName", f"Hero {hero_id_key}"
+                    )
                 else:
                     m["heroName"] = f"Hero {hero_id_key}"
         return vs_list
     return []
+
 
 def get_hero_best_with(hero_id: int, rank: str, limit: int, hero_lookup: dict = None):
     """
@@ -339,11 +345,14 @@ def get_hero_best_with(hero_id: int, rank: str, limit: int, hero_lookup: dict = 
             for m in with_list:
                 hero_id_key = m.get("heroId2")
                 if hero_id_key in hero_lookup:
-                    m["heroName"] = hero_lookup[hero_id_key].get("displayName", f"Hero {hero_id_key}")
+                    m["heroName"] = hero_lookup[hero_id_key].get(
+                        "displayName", f"Hero {hero_id_key}"
+                    )
                 else:
                     m["heroName"] = f"Hero {hero_id_key}"
         return with_list
     return []
+
 
 def get_hero_worst_with(hero_id: int, rank: str, limit: int, hero_lookup: dict = None):
     """
@@ -358,7 +367,9 @@ def get_hero_worst_with(hero_id: int, rank: str, limit: int, hero_lookup: dict =
             for m in with_list:
                 hero_id_key = m.get("heroId2")
                 if hero_id_key in hero_lookup:
-                    m["heroName"] = hero_lookup[hero_id_key].get("displayName", f"Hero {hero_id_key}")
+                    m["heroName"] = hero_lookup[hero_id_key].get(
+                        "displayName", f"Hero {hero_id_key}"
+                    )
                 else:
                     m["heroName"] = f"Hero {hero_id_key}"
         return with_list
