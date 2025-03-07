@@ -30,7 +30,7 @@ class HeroDataProcessor:
                     self.game_version_filter_id = version.get("id")
                     break
             if self.game_version_filter_id is None:
-                raise ValueError(f"Game version {self.args.game_version} not found.")
+                raise ValueError(f"Game version {self.args.game_version} not found. Available versions: {[version['name'] for version in versions]}")
 
     def _fetch_heroes(self):
         """Fetch hero data and create lookup table"""
@@ -68,8 +68,12 @@ class HeroDataProcessor:
 
     def _aggregate_stats(self, stats):
         """Aggregate match statistics for each hero"""
+        max_day = max(stat["day"] for stat in stats)
+        cutoff = max_day - (self.args.days - 1) * 86400
+        filtered_stats = [stat for stat in stats if stat["day"] >= cutoff]
+
         aggregated = {}
-        for stat in stats:
+        for stat in filtered_stats:
             hero_id = stat.get("heroId")
             if hero_id in aggregated:
                 aggregated[hero_id]["winCount"] += stat.get("winCount", 0)
