@@ -2,6 +2,8 @@
 
 It's Python CLI tool to generate a meta hero grid for Dota 2. It uses the Stratz API to get the data.
 
+![hero grid](./assets/hero_grid.png)
+
 ## Installation
 
 I recommend using `uv` to install project.
